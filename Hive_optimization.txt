@@ -1,0 +1,41 @@
+Design Data Storage Smartly
+
+Partition = Directory
+Bucket = file
+
+Partitions helps to reduce data scanned when filters on partition
+
+SET hive.auto.convert.join=true;
+SET hive.auto.convert.join.noconditionaltask=true;
+
+Enable Compression in Hive
+
+SET hive.exec.compress.output=true;
+SET hive.exec.compress.intermediate=true;
+
+Enable predicate pushdown (PPD) to filter at the storage layer:
+
+SET hive.optimize.ppd=true;
+SET hive.optimize.ppd.storage=true
+
+Vectorized query execution processes data in batches of 1024 rows instead of one by one:
+
+SET hive.vectorized.execution.enabled=true;
+SET hive.vectorized.execution.reduce.enabled=true;
+
+Enable the Cost Based Optimizer (COB) for efficient query execution based on cost and fetch table statistics:
+CBO generates more efficient query plans. 
+how to order joins, which type of join to perform, the degree of parallelism and others.
+SET hive.cbo.enable=true;
+SET hive.compute.query.using.stats=true;
+SET hive.stats.fetch.column.stats=true;
+SET hive.stats.fetch.partition.stats=true;
+
+Partition and column statistics from fetched from the metastsore. Use this with caution. If you have too many partitions and/or columns, this could degrade performance.
+
+Control reducer output:
+
+SET hive.exec.reducers.bytes.per.reducer=128000000;
+
+Avoid order by and try to use sort by
+	

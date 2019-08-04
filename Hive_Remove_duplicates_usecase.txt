@@ -1,0 +1,58 @@
+Removing duplicates in HIVE or SQL.
+Table data:
+=========
+COL1 COL2 CREATEDATE   DAYID    MARKETID  
+A     1    20131206   20131207 1234  
+A     1    20131207   20131207 1234  
+A     1    20131206   20131207 1234  
+B     1    20131206   20131207 1234  
+B     1    20131206   20131207 1234  
+C     2    20131206   20131207 1234  
+C     2    20131207   20131207 5678
+
+Remove duplicates from the table
+
+Expected Result:
+=============
+
+COL1 COL2 CREATEDATE   DAYID    MARKETID
+A     1    20131206   20131207   1234
+B     1    20131206   20131207   1234
+C     2    20131206   20131207   1234
+C     2    20131207   20131207   5678
+
+2 ways to remove duplicates:
+=========================
+
+1. using group by
+2. distinct
+
+select col1,col2,dayid,marketid,max(createdate) as createdate
+from tablename
+group by col1,col2,dayid,marketid
+
+CREATE TABLE RAW_TABLE  
+(
+    COL1 STRING,
+    COL2 STRING,
+    CREATEDATE STRING,
+    DAYID STRING,
+    MARKETID STRING
+)
+ROW FORMAT DELIMITED 
+FIELDS TERMINATE BY'\t'
+STORED AS TEXTFILE;
+
+LOAD DATA INPATH '/FOLDER/TO/EXAMPLE.txt  INTO RAW_TABLE;
+
+CREATE TABLE JLT_CLEAN AS
+SELECT col1,
+  col2,
+  dayid,
+  marketid,
+  MAX(createdate) AS createdate
+FROM JLT_STAHING
+GROUP BY col1,
+  col2,
+  dayid,
+  marketid;

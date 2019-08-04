@@ -1,0 +1,44 @@
+
+1. Create a file store.txt and copy the below data:-
+
+Store_id,Store_name,Store_name
+100,MAA_CHENNAI,Chennai Store 1
+101,BOB_MUMBAI,Mumbai Store 1
+102,KOL_KOLKATA,Kolkata Store 1
+103,NDL_NEW DELHI,New Delhi Store 1
+104,PNE_PUNE,PUne Store 1
+105,AHD_AHEMEDABAD,Ahemedabad Store 1
+106,HYD_HYDERABAD,Hyderabad Store 1
+107,BGR_BENGALURU,Bengaluru Store 1
+108,CHG_CHANDIGARH,Chandigarh Store 1
+109,RPR_RAIPUR,Raipur Store 1
+111,UNK_UNKNOWN,UNKNOWN Store 1
+
+
+2. Create a file store_sales.txt and copy the below data into the file:-
+
+sale_id,Store_id,sale_dt,sale_amt
+1,100,2012-11-01,21500
+2,101,2012-11-01,17563
+3,102,2012-11-01,32563
+4,103,2012-11-01,26589
+5,104,2012-11-01,24523
+6,105,2012-11-01,19856
+7,106,2012-11-01,32152
+8,107,2012-11-01,29632
+9,108,2012-11-01,28563
+10,109,2012-11-01,25632
+11,110,2012-11-01,4521
+12,100,2012-11-02,23212
+13,101,2012-11-02,41232
+14,102,2012-11-02,21563
+15,103,2012-11-02,12365
+16,104,2012-11-02,26545
+
+3. Create database called "hivetest"
+4. Create table named "store_m" and load the file "store.txt" file from local
+5. Create table named "store_sales" and load the file "store_sales.txt" file from local
+6. Join both the table and get the following data
+	store_id,store_name,sales_dt, Total salesamt 
+7. Store the data in json format using spark core
+8. Also do the complete process and store into hive using spark sql

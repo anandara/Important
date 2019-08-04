@@ -1,0 +1,221 @@
+---------------------------------
+11. Data For Task
+---------------------------------
+Given a file name spark6/user.csv
+
+user.csv
+id,topic,hits
+Rahul,scala,120
+Nikita,spark,80
+Mithun,spark,1
+myself,cca175,180
+
+Accomplish the followings:-
+
+Write spark code in scala which will remove the header part and create
+RDD of values as below,for all rows.
+And also if id is "myself" than filter out row.
+
+Map(id->om,topic->scala,hits->120)
+
+---------------------------------
+12. Data For Task
+---------------------------------
+Given a filename spark7/EmployeeName.csv
+
+EmployeeName.csv
+E01,Lokesh
+E02,Bhupesh
+E03,Amit
+E04,Ratan
+E05,Dinesh
+E06,Pavan
+E07,Tejas
+E08,Sheela
+E09,Kumar
+E10,Venkat
+
+Accomplish the followings:-
+
+Load the file from hdfs and sort it by name and save it back as
+(id,name) in results directory.
+However make sure while saving it should be able to write single in a
+single file
+
+
+---------------------------------
+13. Data For Task
+---------------------------------
+Given filename spark8/data.csv
+
+data.csv
+1,Lokesh
+2,Bhupesh
+2,Amit
+2,Ratan
+2,Dinesh
+1,Pavan
+1,Tejas
+2,Sheela
+1,Kumar
+1,Venkat
+
+Accomplish the followings:-
+
+Load this file from hdfs, save it back as (id,(all names of same
+type)) in result directory.
+However make sure while saving it should be able to write in a single file.
+
+---------------------------------
+14. Data For Task
+---------------------------------
+Company XYZ done survey on thier Exam products feedback using a web
+based form.with the following
+free text input field as input in web ui.
+Name:String
+Subscription Date:String
+Rating:String
+
+Survey done and data stored in file called spark9/feedback.txt
+
+Christopher|Jan 11, 2015|5
+Kapil|11 Jan, 2015|5
+Thomas|6/17/2014|5
+John|22-08-2013|5
+Mithun|2013|5
+Jitendra||5
+
+Accomplish the followings:-
+
+write a spark program using regular expression which will filter all
+the valid dates and save in two separate file
+(good record and bad record)
+
+---------------------------------
+15. Data For Task
+---------------------------------
+Given an RDD as below:
+val rdd:RDD[Array[Byte]]
+
+Now you have to save this RDD as a sequence file. And below is the code snippet
+
+import org.apache.hadoop.io.compress.GzipCodec
+
+rdd.map(bytesArray => (A.get,new
+B(bytesArray))).saveAsSequenceFile("/output/path",classOf[GzipCodec])
+
+Accomplish the followings:-
+
+what would be the correct replacement for A and B in above snippet
+
+---------------------------------
+16. Data For Task
+---------------------------------
+Given 2 files
+
+spark16/file1.txt
+1,9,5
+2,7,4
+3,8,3
+
+spark16/file2.txt
+1,g,h
+2,i,j
+3,k,l
+
+Accomplish the followings:-
+
+Load these 2 files as Spark RDD and join them to produce the below results
+(1,((9,5),(g,h)))
+(2,((7,4),(i,j)))
+(3,((8,3),(k,l)))
+And write code snippet which will sum the second columns of above
+joined results (5+4+3)
+
+---------------------------------
+17. Data For Task
+---------------------------------
+Given file called spark15/file1.txt
+
+3070811,1963,1096,,"US","CA",,1,
+3022811,1963,1096,,"US","CA",,1,56
+3033811,1963,1096,,"US","CA",,1,23
+
+Below is the code snippet to process the file
+
+val field = sc.textFile("spark15/file1")
+val mapper = field.map(x=>A)
+mapper.map(x=>x.map(x=>{B})).collect
+
+
+Accomplish the following:-
+
+Please fill in A and B so it can generate below final output
+Array(Array(3070811,1963,1096,0,"US","CA",0,1,0),
+,Array(3022811,1963,1096,0,"US","CA",0,1,56)
+,Array(3033811,1963,1096,0,"US","CA",0,1,23))
+
+
+---------------------------------
+18. Data For Task
+---------------------------------
+
+Given below code snippet
+
+val au1 = sc.parallelize(List(("a",Array(1,2)),("b",Array(1,2))))
+val au1 = sc.parallelize(List(("a",Array(3)),("b",Array(2))))
+
+Accomplish the following:-
+
+Apply the spark method, which will generate below output.
+
+Array[(String,Array[Int])] =
+Array((a,Array(1,2)),(b,Array(1,2)),(a,Array(3)),(b,Array(2)))
+
+---------------------------------
+19. Data For Task
+---------------------------------
+You have given file spark10/sales.txt below:-
+
+spark10/sales.txt
+Department,Designation,costToCompany,State
+Sales,Trainee,12000,UP
+Sales,Lead,32000,AP
+Sales,Lead,32000,LA
+Sales,Lead,32000,TN
+Sales,Lead,32000,AP
+Sales,Lead,32000,TN
+Sales,Lead,32000,LA
+Sales,Lead,32000,LA
+Marketing,Associate,18000,TN
+Marketing,Associate,18000,TN
+HR,Manager,58000,TN
+
+
+Accomplish the following:-
+
+Produce the output as csv with group by department,designation,state
+and additional column with sum(costToCompany) and
+TotalEmployeeCount
+
+Should get results like
+
+Dept,Desg,State,empcount,totalcost
+Sales,Lead,AP,2,64000
+Sales,Lead,LA,3,96000
+Sales,Lead,TN,2,64000
+
+
+---------------------------------
+20. Data For Task
+---------------------------------
+Given below code snippet:
+
+val grouped = sc.parallelize(Seq(((1,"two"),List((3,4),(5,6)))))
+val flattened = group.flatMap{A => groupValues.map{value => B } }
+
+Accomplish the following:-
+
+Generate the following output. Hence replace A and Below
+
+Array((1,two,3,4),(1,two,5,6))

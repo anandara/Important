@@ -1,0 +1,17 @@
+cp /usr/local/hive/conf/hive-env.sh.template /usr/local/hive/conf/hive-env.sh
+vi /usr/local/hive/conf/hive-env.sh
+export HIVE_AUX_JARS_PATH=/usr/local/hbase/lib
+
+#sudo cp /usr/local/hive/lib/hive-hbase-handler-0.14.0.jar /usr/local/hive/lib/;
+sudo cp /usr/local/hbase/lib/hbase-common-0.98.4-hadoop2.jar /usr/local/hive/lib/;
+sudo cp /usr/local/hbase/lib/zookeeper-3.4.6.jar /usr/local/hive/lib/;
+sudo cp /usr/local/hbase/lib/guava-12.0.1.jar /usr/local/hive/lib/;
+sudo cp /usr/local/hbase/lib/high-scale-lib-1.1.1.jar /usr/local/hive/lib/;
+
+CREATE TABLE customer_hbase(txnno int,txndate string,custno int,amount double,category string,product string,city string,state string,spendby string)
+STORED BY 'org.apache.hadoop.hive.hbase.HBaseStorageHandler'
+WITH SERDEPROPERTIES ("hbase.columns.mapping" = ":key,cf1:txndate,cf1:custno,cf1:amount,cf1:category,cf1:product,cf1:city,cf1:state,cf1:spendby")
+TBLPROPERTIES ("hbase.table.name" = "customer1");
+
+
+insert into table customer_hbase select * from txnrecords limit 100;

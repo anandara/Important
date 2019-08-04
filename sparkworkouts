@@ -1,0 +1,694 @@
+Creating an RDD
+Since RDD is an abstract class, you cannot create an instance of the RDD class directly. The SparkContext
+class provides factory methods to create instances of concrete implementation classes. An RDD can also be
+created from another RDD by applying a transformation to it.
+
+parallelize
+This method creates an RDD from a local Scala collection. It partitions and distributes the elements of a
+Scala collection and returns an RDD representing those elements.
+
+val xs = (1 to 10000).toList
+val rdd = sc.parallelize(xs)
+
+
+val a = sc.textFile("file:/home/hduser/spark_data/auctiondata.csv").map(lines=>lines.split(","))
+
+textFile
+The textFile method creates an RDD from a text file. 
+
+scala> val lines = sc.textFile("file:/home/hduser/sparkinput/sampledata.txt")
+lines: org.apache.spark.rdd.RDD[String] = file:/home/hduser/sparkinput/sampledata.txt MapPartitionsRDD[82] at textFile at <console>:24
+
+scala> lines.foreach(println)
+ArunKumar chennai  33  2015-09-20   100000 
+srinivasan chennai  33 2015-09-21   10000 
+vasudevan  banglore 39 2015-09-23   90000 
+mohamedimran hyderabad 33 2015-09-24 1000 
+arunbasker chennai  23 2015-09-20  200000
+imran hyderabad 25 2015-10-24 7000 
+sekar Delhi  23 2015-03-20  150000
+
+This method reads all text files in a directory and returns an RDD of key-value pairs.
+val rdd = sc.wholeTextFiles("file:/home/hduser/sparkinput/to/file:/home/hduser/sparkoutput/*.txt")
+
+
+The sequenceFile method reads key-value pairs from a sequence file stored on a local file system, HDFS.
+---val rdd = sc.sequenceFile[String, String]("file:/home/hduser/sparkinput/sampledata.txt")
+
+Transformations
+A transformation method of an RDD creates a new RDD by performing a computation on the source RDD.
+
+map
+The map method is a higher-order method that takes a function as input and applies it to each element in
+the source RDD 
+
+val lines = sc.textFile("file:/home/hduser/sparkinput/sampledata.txt")
+val lengths = lines map { l => l.length}
+lines.foreach(println)
+
+Output:
+lines.foreach(println)
+ArunKumar  chennai  33  2015-09-20   100000 
+srinivasan chennai  33 2015-09-21   10000 
+vasudevan  banglore 39 2015-09-23   90000 
+mohamedimran hyderabad 33 2015-09-24 1000 
+arunbasker chennai  23 2015-09-20  200000
+
+lengths.foreach(println)
+44
+42
+42
+42
+41
+0
+0
+
+filter
+The filter method is a higher-order method that takes a Boolean function as input and applies it to each
+element in the source RDD to create a new RDD.
+
+val longLines = lines filter { l => l.length > 42}
+
+longLines.foreach(println)
+ArunKumar  chennai  33  2015-09-20   100000 
+
+flatMap
+The flatMap method is a higher-order method that takes an input function, which returns a sequence for
+each input element passed to it. The flatMap method returns a new RDD formed by flattening this collection
+of sequence
+
+val words = lines flatMap { l => l.split(" ")}
+ArunKumar
+chennai
+33
+2015-09-20
+100000
+srinivasan
+chennai
+
+mapPartitions
+The higher-order mapPartitions method allows you to process data at a partition level. Instead of passing
+one element at a time to its input function, mapPartitions passes a partition in the form of an iterator.
+The input function to the mapPartitions method takes an iterator as input and returns another iterator as
+output. The mapPartitions method returns new RDD formed by applying a user-specified function to each
+partition of the source RDD.
+
+val lines = sc.textFile("file:/home/hduser/sparkinput/sampledata1.txt")
+val lengths = lines mapPartitions { iter => iter.map { l => l.length}}
+lengths.foreach(println)
+81
+77
+99
+80
+104
+80
+77
+84
+95
+85
+
+union
+The union method takes an RDD as input and returns a new RDD that contains the union of the elements in
+the source RDD and the RDD passed to it as an input.
+
+val linesFile1 = sc.textFile("file:/home/hduser/sparkinput/sampledata.txt")
+val linesFile2 = sc.textFile("file:/home/hduser/sparkinput/sampledata2.txt")
+val linesFromBothFiles = linesFile1.union(linesFile2)
+
+val linesFromBothFiles = linesFile1.union(linesFile2)
+linesFromBothFiles: org.apache.spark.rdd.RDD[String] = UnionRDD[10] at union at <console>:28
+
+scala> linesFromBothFiles.foreach(println)
+ArunKumar  chennai  33  2015-09-20   100000 
+srinivasan chennai  33 2015-09-21   10000 
+vasudevan  banglore 39 2015-09-23   90000 
+mohamedimran hyderabad 33 2015-09-24 1000 
+arunbasker chennai  23 2015-09-20  200000
+mathanKumar delhi  24  2015-05-24   200000 
+vasan kolkata  15 2015-10-25   30000 
+vasu  varanasi 35 2015-04-10  10000 
+mohamed indore 32 2015-05-12 4000 
+arun chennai  23 2015-09-08  600000
+
+intersection
+The intersection method takes an RDD as input and returns a new RDD that contains the intersection of
+the elements in the source RDD and the RDD passed to it as an input.
+
+val linesPresentInBothFiles = linesFile1.intersection(linesFile2)
+linesPresentInBothFiles: org.apache.spark.rdd.RDD[String] = MapPartitionsRDD[32] at intersection at <console>:28
+
+scala> linesPresentInBothFiles.foreach(println)
+arunbasker chennai  23 2015-09-20  200000
+mohamedimran hyderabad 33 2015-09-24 1000 
+
+subtract
+The subtract method takes an RDD as input and returns a new RDD that contains elements in the source
+RDD but not in the input RDD.
+
+val linesInFile1Only = linesFile1.subtract(linesFile2)
+linesInFile1Only: org.apache.spark.rdd.RDD[String] = MapPartitionsRDD[36] at subtract at <console>:28
+
+scala> linesInFile1Only.foreach(println)
+ArunKumar  chennai  33  2015-09-20   100000 
+vasudevan  banglore 39 2015-09-23   90000 
+srinivasan chennai  33 2015-09-21   10000 
+
+distinct
+The distinct method of an RDD returns a new RDD containing the distinct elements in the source RDD.
+
+val uniqueNumbers = lines.distinct
+lines.foreach(println)
+00021691,07-18-2011,4008765,075.44,Team Sports,Softball,Chicago,Illinois,credit
+00094155,08-23-2011,4004808,130.67,Games,Mahjong,Omaha,Nebraska,credit
+00077575,08-23-2011,4001380,174.59,Games,Bingo Sets,Huntsville,Alabama,credit
+00011974,10-30-2011,4008098,090.36,Outdoor Recreation,Skateboarding,New Orleans,Louisiana,credit
+00038976,02-13-2011,4001810,071.69,Games,Dominoes,Charlotte,North Carolina,credit
+00044256,01-02-2011,4003385,102.20,Outdoor Recreation,Rock Climbing,Portland,Oregon,credit
+00031748,12-26-2011,4007554,121.15,Outdoor Recreation,Track & Field,Coral Springs,Florida,credit
+00050997,06-12-2011,4007495,114.19,Puzzles,Jigsaw Puzzles,Tampa,Florida,credit
+00014854,01-07-2011,4007703,178.89,Team Sports,Field Hockey,Cincinnati,Ohio,credit
+
+cartesian
+The cartesian method of an RDD takes an RDD as input and returns an RDD containing the cartesian
+product of all the elements in both RDDs. It returns an RDD of ordered pairs, in which the first element
+comes from the source RDD and the second element is from the input RDD. The number of elements in the
+returned RDD is equal to the product of the source and input RDD lengths.
+
+val numbers = sc.parallelize(List(1, 2, 3, 4))
+val alphabets = sc.parallelize(List("a", "b", "c", "d"))
+
+val cartesianProduct = numbers.cartesian(alphabets)
+cartesianProduct: org.apache.spark.rdd.RDD[(Int, String)] = CartesianRDD[42] at cartesian at <console>:28
+cartesianProduct.foreach(println)
+(1,a)
+(1,b)
+(1,c)
+(1,d)
+(2,a)
+(2,b)
+(2,c)
+(2,d)
+(3,a)
+(3,b)
+(3,c)
+(3,d)
+(4,a)
+(4,b)
+(4,c)
+(4,d)
+
+zip
+The zip method takes an RDD as input and returns an RDD of pairs, where the first element in a pair is
+from the source RDD and second element is from the input RDD.Both the source RDD and the input
+RDD must have the same length.
+val linesFile1 = sc.textFile("file:/home/hduser/sparkinput/sampledata.txt")
+val linesFile2 = sc.textFile("file:/home/hduser/sparkinput/sampledata2.txt")
+val zippedPair = linesFile1.zip(linesFile2)
+
+zippedPair.foreach(println)
+(ArunKumar  chennai  33  2015-09-20   100000 ,mathanKumar delhi  24  2015-05-24   200000 )
+(srinivasan chennai  33 2015-09-21   10000 ,vasan kolkata  15 2015-10-25   30000 )
+(vasudevan  banglore 39 2015-09-23   90000 ,vasu  varanasi 35 2015-04-10  10000 )
+(mohamedimran hyderabad 33 2015-09-24 1000 ,mohamed indore 32 2015-05-12 4000 )
+(arunbasker chennai  23 2015-09-20  200000,arun chennai  23 2015-09-08  600000)
+(imran hyderabad 25 2015-10-24 7000 ,mohamedimran hyderabad 33 2015-09-24 1000 )
+(sekar Delhi  23 2015-03-20  150000,arunbasker chennai  23 2015-09-20  200000)
+
+zipWithIndex
+The zipWithIndex method zips the elements of the source RDD with their indices and returns an RDD of pairs.
+
+val linesFile1 = sc.textFile("file:/home/hduser/sparkinput/sampledata.txt")
+val alphabetsWithIndex = linesFile1.zip
+alphabetsWithIndex.foreach(println)
+
+val alphabetsWithIndex = numbers.zip(linesFile1)
+alphabetsWithIndex: org.apache.spark.rdd.RDD[(Int, String)] = ZippedPartitionsRDD2[55] at zip at <console>:28
+
+alphabetsWithIndex.foreach(println)
+(1,ArunKumar  chennai  33  2015-09-20   100000 )
+(2,srinivasan chennai  33 2015-09-21   10000 )
+(3,vasudevan  banglore 39 2015-09-23   90000 )
+(4,mohamedimran hyderabad 33 2015-09-24 1000 )
+
+groupBy
+The higher-order groupBy method groups the elements of an RDD according to a user specified criteria.
+It takes as input a function that generates a key for each element in the source RDD. 
+
+case class Customer(name: String, city: String, age: Int,zip: Int)
+val lines = sc.textFile("file:/home/hduser/sparkinput/sampledata3.txt")
+val customers = lines map { l => {
+val a = l.split(",")
+Customer(a(0), a(1), a(2).toInt,a(3).toInt)
+}
+}
+val groupByZip = customers.groupBy { a(1) => a(1).zip}
+
+groupByZip.foreach(println)
+
+
+randomSplit
+The randomSplit method splits the source RDD into an array of RDDs. It takes the weights of the splits as input.
+
+val numbers = sc.parallelize((1 to 100).toList)
+val splits = numbers.randomSplit(Array(0.6, 0.2, 0.2))
+splits.foreach(println)
+
+MapPartitionsRDD[40] at randomSplit at <console>:26
+MapPartitionsRDD[41] at randomSplit at <console>:26
+MapPartitionsRDD[42] at randomSplit at <console>:26
+
+
+coalesce
+The coalesce method reduces the number of partitions in an RDD. It takes an integer input and returns a
+new RDD with the specified number of partitions.
+
+val numbers = sc.parallelize((1 to 100).toList)
+val numbersWithOnePartition = numbers.coalesce(1)
+numbersWithOnePartition.foreach(println)
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+.
+.
+100
+
+For
+example, an RDD may have too many sparse partitions after a filter operation. Reducing the partitions may
+provide performance benefit in such a case.
+
+repartition
+The repartition method takes an integer as input and returns an RDD with specified number of partitions.
+It is useful for increasing parallelism. It redistributes data, so it is an expensive operation.
+
+val numbersWithOnePartition = numbers.repartition(4)
+numbersWithOnePartition.foreach(println)
+2
+6
+10
+14
+18
+22
+26
+30
+3
+7
+11
+15
+19
+23
+4
+8
+12
+16
+20
+1
+5
+9
+13
+17
+21
+
+
+
+Transformations on RDD of key-value Pairs
+
+keys
+The keys method returns an RDD of only the keys in the source RDD.
+
+val kvRdd = sc.parallelize(List(("a", 1), ("b", 2), ("c", 3)))
+val keysRdd = kvRdd.keys
+keysRdd: org.apache.spark.rdd.RDD[String] = MapPartitionsRDD[58] at keys at <console>:26
+keysRdd.foreach(println)
+a
+b
+c
+
+val valuesRdd = kvRdd.values
+valuesRdd: org.apache.spark.rdd.RDD[Int] = MapPartitionsRDD[59] at values at <console>:26
+valuesRdd.foreach(println)
+1
+2
+3
+
+val lines = sc.textFile("file:/home/hduser/sparkinput/sampledata3.txt")
+val keysRdd = lines.keys
+
+mapValues
+The mapValues method is a higher-order method that takes a function as input and applies it to each value
+in the source RDD. It returns an RDD of key-value pairs. It is similar to the map method, except that it applies
+the input function only to each value in the source RDD, so the keys are not changed. The returned RDD has
+the same keys as the source RDD.
+
+val kvRdd = sc.parallelize(List(("a", 1), ("b", 2), ("c", 3)))
+val valuesDoubled = kvRdd mapValues { x => 2*x}
+valuesDoubled.foreach(println)
+(a,2)
+(b,4)
+(c,6)
+
+join
+The join method takes an RDD of key-value pairs as input and performs an inner join on the source and input
+RDDs. 
+
+val pairRdd1 = sc.parallelize(List(("a", 1), ("b",2), ("c",3)))
+val pairRdd2 = sc.parallelize(List(("b", "second"), ("c","third"), ("d","fourth")))
+val joinRdd = pairRdd1.join(pairRdd2)
+joinRdd.foreach(println)
+(b,(2,second))
+(c,(3,third))
+
+
+val linesFile1 = sc.textFile("file:/home/hduser/sparkinput/sampledata.txt")
+val linesFile2 = sc.textFile("file:/home/hduser/sparkinput/sampledata2.txt")
+val joinRdd = linesFile1.join(linesFile2)
+
+
+sampleByKey
+The sampleByKey method returns a subset of the source RDD sampled by key. It takes the sampling rate for
+each key as input and returns a sample of the source RDD.
+
+val pairRdd = sc.parallelize(List(("a", 1), ("b",2), ("a", 11),("b",22),("a", 111), ("b",222)))
+val sampleRdd = pairRdd.sampleByKey(true, Map("a"-> 0.1, "b"->0.2))
+sampleRdd.foreach(println)
+(a,11)
+(b,22)
+val sampleRdd = pairRdd.sampleByKey(true, Map("a"-> 1, "b"->2))
+sampleRdd.foreach(println)
+(b,2)
+(b,22)
+(b,22)
+(b,22)
+(a,111)
+(a,111)
+(b,222)
+(b,222)
+(b,222)
+val sampleRdd = pairRdd.sampleByKey(true, Map("a"-> 1, "b"->2))
+sampleRdd.foreach(println)
+(a,1)
+(a,1)
+(a,1)
+(b,2)
+(a,11)
+(a,11)
+(b,22)
+(b,222)
+val sampleRdd = pairRdd.sampleByKey(true, Map("a"-> 1, "b"->1))
+sampleRdd: org.apache.spark.rdd.RDD[(String, Int)] = MapPartitionsRDD[5] at sampleByKey at <console>:26
+scala> sampleRdd.foreach(println)
+(a,1)
+(a,1)
+(a,1)
+(b,22)
+(a,111)
+
+Actions
+Actions are RDD methods that return a value to a driver program. This section discusses the commonly used
+RDD actions.
+
+collect
+The collect method returns the elements in the source RDD as an array. This method should be used with
+caution since it moves data from all the worker nodes to the driver program. It can crash the driver program
+if called on a very large RDD.
+
+val rdd = sc.parallelize((1 to 10000).toList)
+val filteredRdd = rdd filter { x => (x % 1000) == 0 }
+val filterResult = filteredRdd.collect
+filterResult: Array[Int] = Array(1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000)
+
+count
+The count method returns a count of the elements in the source RDD.
+val rdd = sc.parallelize((1 to 10000).toList)
+val total = rdd.count
+
+total: Long = 10000
+
+countByValue
+The countByValue method returns a count of each unique element in the source RDD. It returns an instance
+of the Map class containing each unique element and its count as a key-value pair.
+
+val rdd = sc.parallelize(List(1, 2, 3, 4, 1, 2, 3, 1, 2, 1))
+rdd: org.apache.spark.rdd.RDD[Int] = ParallelCollectionRDD[16] at parallelize at <console>:24
+
+scala> val counts = rdd.countByValue
+counts: scala.collection.Map[Int,Long] = Map(4 -> 1, 1 -> 4, 3 -> 2, 2 -> 3)
+
+first
+The first method returns the first element in the source RDD.
+
+val rdd = sc.parallelize(List(10, 5, 3, 1))
+rdd: org.apache.spark.rdd.RDD[Int] = ParallelCollectionRDD[20] at parallelize at <console>:24
+
+scala> val firstElement = rdd.first
+firstElement: Int = 10
+
+max
+The max method returns the largest element in an RDD.
+
+scala> val rdd = sc.parallelize(List(2, 5, 3, 1))
+rdd: org.apache.spark.rdd.RDD[Int] = ParallelCollectionRDD[21] at parallelize at <console>:24
+
+scala> val maxElement = rdd.max
+maxElement: Int = 5
+
+
+min
+The min method returns the smallest element in an RDD.
+
+scala> val rdd = sc.parallelize(List(2, 5, 3, 1))
+rdd: org.apache.spark.rdd.RDD[Int] = ParallelCollectionRDD[22] at parallelize at <console>:24
+
+scala> val minElement = rdd.min
+minElement: Int = 1
+
+take
+The take method takes an integer N as input and returns an array containing the first N element in the
+source RDD.
+
+scala> val rdd = sc.parallelize(List(2, 5, 3, 1, 50, 100))
+rdd: org.apache.spark.rdd.RDD[Int] = ParallelCollectionRDD[23] at parallelize at <console>:24
+
+scala> val first3 = rdd.take(3)
+first3: Array[Int] = Array(2, 5, 3)
+
+takeOrdered
+The takeOrdered method takes an integer N as input and returns an array containing the N smallest
+elements in the source RDD.
+
+scala> val rdd = sc.parallelize(List(2, 5, 3, 1, 50, 100))
+rdd: org.apache.spark.rdd.RDD[Int] = ParallelCollectionRDD[24] at parallelize at <console>:24
+
+scala> val smallest3 = rdd.takeOrdered(3)
+smallest3: Array[Int] = Array(1, 2, 3)
+
+top
+The top method takes an integer N as input and returns an array containing the N largest elements in the
+source RDD.
+
+scala> val rdd = sc.parallelize(List(2, 5, 3, 1, 50, 100))
+rdd: org.apache.spark.rdd.RDD[Int] = ParallelCollectionRDD[26] at parallelize at <console>:24
+
+scala> val largest3 = rdd.top(3)
+largest3: Array[Int] = Array(100, 50, 5)
+
+fold
+The higher-order fold method aggregates the elements in the source RDD using the specified neutral zero
+value and an associative binary operator. It first aggregates the elements in each RDD partition and then
+aggregates the results from each partition.
+
+scala> val numbersRdd = sc.parallelize(List(2, 5, 3, 1))
+numbersRdd: org.apache.spark.rdd.RDD[Int] = ParallelCollectionRDD[28] at parallelize at <console>:24
+
+scala> val sum = numbersRdd.fold(0) ((partialSum, x) => partialSum + x)
+sum: Int = 11
+
+scala> val product = numbersRdd.fold(1) ((partialProduct, x) => partialProduct * x)
+product: Int = 30
+
+reduce
+The higher-order reduce method aggregates the elements of the source RDD using an associative and
+commutative binary operator provided to it. It is similar to the fold method; however, it does not require a
+neutral zero value.
+
+scala> val numbersRdd = sc.parallelize(List(2, 5, 3, 1))
+numbersRdd: org.apache.spark.rdd.RDD[Int] = ParallelCollectionRDD[29] at parallelize at <console>:24
+
+scala> val sum = numbersRdd.reduce ((x, y) => x + y)
+sum: Int = 11
+
+scala> val product = numbersRdd.reduce((x, y) => x * y)
+product: Int = 30
+
+Actions on RDD of key-value Pairs
+RDDs of key-value pairs support a few additional actions, which are briefly described next.
+
+countByKey
+The countByKey method counts the occurrences of each unique key in the source RDD. It returns a Map of
+key-count pairs.
+
+scala> val pairRdd = sc.parallelize(List(("a", 1), ("b", 2), ("c", 3), ("a", 11), ("b", 22), ("a", 1)))
+pairRdd: org.apache.spark.rdd.RDD[(String, Int)] = ParallelCollectionRDD[30] at parallelize at <console>:24
+
+scala> val countOfEachKey = pairRdd.countByKey
+countOfEachKey: scala.collection.Map[String,Long] = Map(a -> 3, b -> 2, c -> 1)
+
+lookup
+The lookup method takes a key as input and returns a sequence of all the values mapped to that key in the
+source RDD.
+
+scala> val pairRdd = sc.parallelize(List(("a", 1), ("b", 2), ("c", 3), ("a", 11), ("b", 22), ("a", 1)))
+pairRdd: org.apache.spark.rdd.RDD[(String, Int)] = ParallelCollectionRDD[30] at parallelize at <console>:24
+
+scala> val values = pairRdd.lookup("a")
+values: Seq[Int] = WrappedArray(1, 11, 1)
+
+Actions on RDD of Numeric Types
+RDDs containing data elements of type Integer, Long, Float, or Double support a few additional actions that
+are useful for statistical analysis.
+
+mean
+The mean method returns the average of the elements in the source RDD.
+
+scala> val numbersRdd = sc.parallelize(List(2, 5, 3, 1))
+numbersRdd: org.apache.spark.rdd.RDD[Int] = ParallelCollectionRDD[35] at parallelize at <console>:24
+
+scala> val mean = numbersRdd.mean
+mean: Double = 2.75
+
+stdev
+The stdev method returns the standard deviation of the elements in the source RDD.
+
+scala> val numbersRdd = sc.parallelize(List(2, 5, 3, 1))
+numbersRdd: org.apache.spark.rdd.RDD[Int] = ParallelCollectionRDD[38] at parallelize at <console>:24
+
+scala> val stdev = numbersRdd.stdev
+stdev: Double = 1.479019945774904
+
+sum
+The sum method returns the sum of the elements in the source RDD.
+scala> val numbersRdd = sc.parallelize(List(2, 5, 3, 1))
+numbersRdd: org.apache.spark.rdd.RDD[Int] = ParallelCollectionRDD[41] at parallelize at <console>:24
+
+scala> val sum = numbersRdd.sum
+sum: Double = 11.0
+
+variance
+The variance method returns the variance of the elements in the source RDD.
+
+scala> val numbersRdd = sc.parallelize(List(2, 5, 3, 1))
+numbersRdd: org.apache.spark.rdd.RDD[Int] = ParallelCollectionRDD[43] at parallelize at <console>:24
+
+scala> val variance = numbersRdd.variance
+variance: Double = 2.1875
+
+saveAsTextFile
+The saveAsTextFile method saves the elements of the source RDD in the specified directory on any
+Hadoop-supported file system. Each RDD element is converted to its string representation and stored as a
+line of text.
+
+val numbersRdd = sc.parallelize((1 to 10000).toList)
+val filteredRdd = numbersRdd filter { x => x % 1000 == 0}
+filteredRdd.saveAsTextFile("file:/home/hduser/sparkinput/sampledata5.txt")
+
+val linesFile1 = sc.textFile("file:/home/hduser/sparkinput/sampledata.txt")
+val linesFile2 = sc.textFile("file:/home/hduser/sparkinput/sampledata2.txt")
+val zippedPair = linesFile1.zip(linesFile2)
+zippedPair.saveAsTextFile("file:/home/hduser/sparkinput/sampledata6.txt")
+
+saveAsObjectFile
+The saveAsObjectFile method saves the elements of the source RDD as serialized Java objects in the
+specified directory.
+
+val numbersRdd = sc.parallelize((1 to 10000).toList)
+val filteredRdd = numbersRdd filter { x => x % 1000 == 0}
+filteredRdd.saveAsObjectFile("file:/home/hduser/sparkinput/sampledata6.txt")
+
+val linesFile1 = sc.textFile("file:/home/hduser/sparkinput/sampledata.txt")
+val linesFile2 = sc.textFile("file:/home/hduser/sparkinput/sampledata2.txt")
+val zippedPair = linesFile1.zip(linesFile2)
+zippedPair.saveAsObjectFile("file:/home/hduser/sparkinput/sampledata9")
+
+Caching
+Besides storing data in memory, caching an RDD play another important role. As mentioned earlier, an RDD
+is created by either reading data from a storage system or by applying a transformation to an existing RDD.
+By default, when an action method of an RDD is called, Spark creates that RDD from its parents, which may
+require creation of the parent RDDs, and so on. This process continues until Spark gets to the root RDD,
+which Spark creates by reading data from a storage system. 
+
+val logs = sc.textFile("path/to/log-files")
+val errorLogs = logs filter { l => l.contains("ERROR")}
+val warningLogs = logs filter { l => l.contains("WARN")}
+val errorCount = errorLogs.count
+val warningCount = warningLogs.count
+
+RDD Caching Methods
+The RDD class provides two methods to cache an RDD: cache and persist.
+
+cache
+The cache method stores an RDD in the memory of the executors across a cluster. It essentially materializes
+an RDD in memory.
+
+val logs = sc.textFile("path/to/log-files")
+val errorsAndWarnings = logs filter { l => l.contains("ERROR") || l.contains("WARN")}
+errorsAndWarnings.cache()
+val errorLogs = errorsAndWarnings filter { l => l.contains("ERROR")}
+val warningLogs = errorsAndWarnings filter { l => l.contains("WARN")}
+val errorCount = errorLogs.count
+val warningCount = warningLogs.count
+
+
+persist
+The persist method is a generic version of the cache method. It allows an RDD to be stored in memory,
+disk, or both. It optionally takes a storage level as an input parameter. If persist is called without any
+parameter, its behavior is identical to that of the cache method.
+val lines = sc.textFile("...")
+lines.persist()
+The persist method supports the following common storage options:
+•	
+MEMORY_ONLY: When an application calls the persist method with the MEMORY_ONLY
+flag, Spark stores RDD partitions in memory on the worker nodes using deserialized
+Java objects. If an RDD partition does not fit in memory on a worker node, it is
+computed on the fly when needed.
+
+val lines = sc.textFile("...")
+lines.persist(MEMORY_ONLY)
+
+MEMORY_AND_DISK: In this case, Spark stores as many RDD partitions in memory as
+                 possible and stores the remaining partitions on disk.
+
+MEMORY_ONLY_SER: In this case, Spark stores RDD partitions in memory as serialized
+                 Java objects. A serialized Java object consumes less memory, but is more CPU-
+                 intensive to read. This option allows a trade-off between memory consumption and
+                 CPU utilization.
+
+   DISK_ONLY:    If persist is called with the DISK_ONLY flag, Spark materializes RDD
+                 partitions and stores them in a local file system on each worker node. This option
+                 can be used to persist intermediate RDDs so that subsequent actions do not have to
+                 start computation from the root RDD.
+MEMORY_AND_DISK_SER: Spark stores in memory as serialized Java objects as many
+                     RDD partitions as possible. The remaining partitions are saved on disk.
+
+Cache Memory Management
+Spark automatically manages cache memory using LRU (least recently used) algorithm. It removes old
+RDD partitions from cache memory when needed. In addition, the RDD API includes a method called
+unpersist(). An application can call this method to manually remove RDD partitions from memory.
+
+
+

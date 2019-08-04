@@ -1,0 +1,45 @@
+There are two files in the folder:
+http-statuscode-master.txt - for lookup http request info
+prod_nginx_live_only_log - server log
+
+
+Server log File Format:
+$remote_addr - $remote_user [$time_local] "$request" $status
+$body_bytes_sent "$http_referer" "$http_user_agent"
+
+Format Description:
+    $remote_addr – IP from which request was made
+    $remote_user – HTTP Authenticated User. This will be blank for
+most apps as modern apps do not use HTTP-based authentication.
+    [$time_local] – timestamp as per server timezone
+    “$request” – HTTP request type GET, POST, etc + requested path
+without args + HTTP protocol version
+    $status – HTTP response code from server
+    $body_bytes_sent – size of server response in bytes
+    “$http_referer” – Referral URL (if present)
+    “$http_user_agent” – User agent as seen by server
+
+Log files:
+prod_nginx_live_only_log.tar.gz
+httpstatuscodemaster.txt
+
+Sample log:
+52.66.142.37 - - [25/Dec/2016:06:48:00 +0530] "POST
+/wp-cron.php?doing_wp_cron=1482628680.2639119625091552734375 HTTP/1.0"
+499 0 "-" "WordPress/4.5.2; http://blog.equityboss.com"
+
+Note: log file contains 50K records
+
+Use Cases:-
+
+1. Get Unique/Distinct count of $remote_addr
+2. Get count of HTTP-Method(GET,POST,HEAD,etc) from $remote_user
+3. Get $status http response code count
+4. Get count for each $http_referer
+5. Get client OS count based on Windows,Linux, Android from $http_user_agent
+6. Lookup with httpstatuscodemaster code master and get the
+description for distinct status in the log file
+7. Lookup with httpstatuscodemaster and get the count and description
+based on HTTP-Method
+8. Get Maximum and Minimum bytes sent using $body_bytes_sent
+

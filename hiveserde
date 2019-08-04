@@ -1,0 +1,48 @@
+<record customer_id="0000-JTALA">
+        <income>200000</income>     
+        <demographics>
+            <gender>F</gender>
+            <agecat>1</agecat>
+            <edcat>1</edcat>
+            <jobcat>2</jobcat>
+            <empcat>2</empcat>
+            <retire>0</retire>
+            <jobsat>1</jobsat>
+            <marital>1</marital>
+            <spousedcat>1</spousedcat>
+            <residecat>4</residecat>
+            <homeown>0</homeown>
+            <hometype>2</hometype>
+            <addresscat>2</addresscat>
+        </demographics>
+        <financial>
+            <income>18</income>
+            <creddebt>1.003392</creddebt>
+            <othdebt>2.740608</othdebt>
+            <default>0</default>
+        </financial>
+    </record>
+
+
+
+CREATE TABLE xml_bank(customer_id STRING, income BIGINT, demographics map<string,string>, financial map<string,string>)
+ROW FORMAT SERDE 'com.ibm.spss.hive.serde2.xml.XmlSerDe'
+WITH SERDEPROPERTIES (
+"column.xpath.customer_id"="/record/@customer_id",
+"column.xpath.income"="/record/income/text()",
+"column.xpath.demographics"="/record/demographics/*",
+"column.xpath.financial"="/record/financial/*"
+)
+STORED AS
+INPUTFORMAT 'com.ibm.spss.hive.serde2.xml.XmlInputFormat'
+OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.IgnoreKeyTextOutputFormat'
+TBLPROPERTIES (
+"xmlinput.start"="<record customer",
+"xmlinput.end"="</record>"
+);
+
+load data local inpath '/home/hduser/XMLdatafile.xml' overwrite into table xml_bank;
+
+select * from xml_bank;
+
+select customer, income demographics, financial from xml_bank limit 1; 

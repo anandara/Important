@@ -1,0 +1,653 @@
+val sqlContext = new org.apache.spark.sql.SQLContext(sc)
+
+import sqlContext.implicits._
+
+case class Customer(cId: Long, name: String, age: Int, gender: String)
+val customers = List(Customer(1, "James", 21, "M"),
+Customer(2, "Liz", 25, "F"),
+Customer(3, "John", 31, "M"),
+Customer(4, "Jennifer", 45, "F"),
+Customer(5, "Robert", 41, "M"),
+Customer(6, "Sandra", 45, "F"))
+ 
+val customerDF = sc.parallelize(customers).toDF()
+ 
+case class Product(pId: Long, name: String, price: Double, cost: Double)
+val products = List(Product(1, "iPhone", 600, 400),
+Product(2, "Galaxy", 500, 400),
+Product(3, "iPad", 400, 300),
+Product(4, "Kindle", 200, 100),
+Product(5, "MacBook", 1200, 900),
+Product(6, "Dell", 500, 400))
+ 
+val productDF = sc.parallelize(products).toDF()
+ 
+case class Home(city: String, size: Int, lotSize: Int,bedrooms: Int, bathrooms: Int, price: Int)
+
+val homes = List(Home("San Francisco", 1500, 4000, 3, 2, 1500000),
+Home("Palo Alto", 1800, 3000, 4, 2, 1800000),
+Home("Mountain View", 2000, 4000, 4, 2, 1500000),
+Home("Sunnyvale", 2400, 5000, 4, 3, 1600000),
+Home("San Jose", 3000, 6000, 4, 3, 1400000),
+Home("Fremont", 3000, 7000, 4, 3, 1500000),
+Home("Pleasanton", 3300, 8000, 4, 3, 1400000),
+Home("Berkeley", 1400, 3000, 3, 3, 1100000),
+Home("Oakland", 2200, 6000, 4, 3, 1100000),
+Home("Emeryville", 2500, 5000, 4, 3, 1200000))
+ 
+val homeDF = sc.parallelize(homes).toDF
+
+customerDF.cache()
+
+
+
+
+columns
+
+The columns method returns the names of all the columns in the source DataFrame as an array of String.
+
+val cols = customerDF.columns
+
+
+dtypes
+The dtypes method returns the data types of all the columns in the source DataFrame as an array of tuples.
+The first element in a tuple is the name of a column and the second element is the data type of that column.
+
+val columnsWithTypes = customerDF.dtypes
+
+persist
+The persist method caches the source DataFrame in memory.
+customerDF.persist
+
+printSchema
+The printSchema method prints the schema of the source DataFrame on the console in a tree format.
+customerDF.printSchema()
+
+registerTempTable
+The registerTempTable method creates a temporary table in Hive metastore. It takes a table name as an argument.
+A temporary table can be queried using the sql method in SQLContext or HiveContext. It is available
+only during the lifespan of the application that creates it.
+
+customerDF.registerTempTable("customer")
+val countDF = sqlContext.sql("SELECT count(1) AS cnt FROM customer")
+
+agg
+The agg method performs specified aggregations on one or more columns in the source DataFrame and
+returns the result as a new DataFrame.
+
+val aggregates = productDF.agg(max("price"), min("price"), count("name"))
+aggregates.show
+
+distinct
+The distinct method returns a new DataFrame containing only the unique rows in the source DataFrame.
+
+val dfWithoutDuplicates = customerDF.distinct
+
+dfWithoutDuplicates.show
+
+
+filter
+The filter method filters rows in the source DataFrame using a SQL expression provided to it as an
+argument. It returns a new DataFrame containing only the filtered rows. The SQL expression can be passed
+as a string argument.
+
+val filteredDF = customerDF.filter("age > 25")
+
+
+groupBy
+The groupBy method groups the rows in the source DataFrame using the columns provided to it as
+arguments. Aggregation can be performed on the grouped data returned by this method.
+
+val countByGender = customerDF.groupBy("gender").count
+
+countByGender.show
+
+
+case class SalesSummary(date: String, product: String, country: String, revenue: Double)
+val sales = List(SalesSummary("01/01/2015", "iPhone", "USA", 40000),
+SalesSummary("01/02/2015", "iPhone", "USA", 30000),
+SalesSummary("01/01/2015", "iPhone", "China", 10000),
+SalesSummary("01/02/2015", "iPhone", "China", 5000),
+SalesSummary("01/01/2015", "S6", "USA", 20000),
+SalesSummary("01/02/2015", "S6", "USA", 10000),
+SalesSummary("01/01/2015", "S6", "China", 9000),
+SalesSummary("01/02/2015", "S6", "China", 6000))
+ 
+val salesDF = sc.parallelize(sales).toDF()
+
+
+val revenueByProductDF = salesDF.groupBy("product").sum("revenue")
+
+
+intersect
+
+The intersect method takes a DataFrame as an argument and returns a new DataFrame containing only
+the rows in both the input and source DataFrame.
+
+val customers2 = List(Customer(11, "Jackson", 21, "M"),
+Customer(12, "Emma", 25, "F"),
+Customer(13, "Olivia", 31, "F"),
+Customer(4, "Jennifer", 45, "F"),
+Customer(5, "Robert", 41, "M"),
+Customer(6, "Sandra", 45, "F"))
+ 
+val customer2DF = sc.parallelize(customers2).toDF()
+val commonCustomersDF = customerDF.intersect(customer2DF)
+commonCustomersDF.show
+
+
+join
+The join method performs a SQL join of the source DataFrame with another DataFrame. It takes three
+arguments, a DataFrame, a join expression and a join type.
+
+case class Transaction(tId: Long, custId: Long, prodId: Long, date: String, city: String)
+val transactions = List(Transaction(1, 5, 3, "01/01/2015", "San Francisco"),
+Transaction(2, 6, 1, "01/02/2015", "San Jose"),
+Transaction(3, 1, 6, "01/01/2015", "Boston"),
+Transaction(4, 200, 400, "01/02/2015", "Palo Alto"),
+Transaction(6, 100, 100, "01/02/2015", "Mountain View"))
+ 
+val transactionDF = sc.parallelize(transactions).toDF()
+val innerDF = transactionDF.join(customerDF, $"custId" === $"cId", "inner")
+val outerDF = transactionDF.join(customerDF, $"custId" === $"cId", "outer")
+
+outerDF.show
+
+val leftOuterDF = transactionDF.join(customerDF, $"custId" === $"cId", "left_outer")
+
+leftOuterDF.show
+
+val rightOuterDF = transactionDF.join(customerDF, $"custId" === $"cId", "right_outer")
+
+rightOuterDF.show
+
+limit
+
+The limit method returns a DataFrame containing the specified number of rows from the source DataFrame.
+
+val fiveCustomerDF = customerDF.limit(5)
+
+fiveCustomerDF.show
+
+orderBy
+
+The orderBy method returns a DataFrame sorted by the given columns. It takes the names of one or more columns as arguments.
+
+val sortedDF = customerDF.orderBy("name")
+
+sortedDF.show
+
+
+select
+
+The select method returns a DataFrame containing only the specified columns from the source DataFrame.
+
+val namesAgeDF = customerDF.select("name", "age")
+
+namesAgeDF.show
+
+val newAgeDF = customerDF.select($"name", $"age" + 10)
+
+newAgeDF.show
+
+
+toJSON
+
+The toJSON method generates an RDD of JSON strings from the source DataFrame. Each element in the returned RDD is a JSON object.
+
+val jsonRDD = customerDF.toJSON
+
+jsonRDD.collect
+
+
+collect
+The collect method returns the data in a DataFrame as an array of Rows.
+
+val result = customerDF.collect
+
+
+count
+The count method returns the number of rows in the source DataFrame.
+
+val count = customerDF.count
+
+
+describe
+The describe method can be used for exploratory data analysis. It returns summary statistics for numeric
+columns in the source DataFrame. The summary statistics includes min, max, count, mean, and standard
+deviation. It takes the names of one or more columns as arguments.
+
+
+val summaryStatsDF = productDF.describe("price", "cost")
+
+summaryStatsDF.show
+
+
+first
+The first method returns the first row in the source DataFrame.
+val first = customerDF.first
+
+Output Operations
+An output operation saves a DataFrame to a storage system. Prior to version 1.4, DataFrame included a
+number of different methods for saving a DataFrame to a variety of storage systems. Starting with version 1.4,
+those methods were replaced by the write method.
+
+write
+The write method returns an instance of the DataFrameWriter class, which provides methods for saving the
+contents of a DataFrame to a data source. The next section covers the DataFrameWriter class.
+
+
+Saving a DataFrame
+
+Spark SQL provides a unified interface for saving a DataFrame to a variety of data sources. The same
+interface can be used to write data to relational databases, NoSQL data stores and a variety of file formats.
+The DataFrameWriter class defines the interface for writing data to a data source. Through its builder
+methods, it allows you to specify different options for saving data. For example, you can specify format,
+partitioning, and handling of existing data.
+The following examples show how to save a DataFrame to different storage systems.
+
+// save a DataFrame in JSON format
+
+customerDF.write.format("org.apache.spark.sql.json").save("file:///home/hduser/sparkoutput/json/")
+ 
+// save a DataFrame in Parquet format
+homeDF.write.format("org.apache.spark.sql.parquet").partitionBy("city").save("file:///home/hduser/sparkoutput/parquet/")
+ 
+// save a DataFrame in ORC file format
+homeDF.write.format("orc").partitionBy("city").save("file:///home/hduser/sparkoutput/orc/")
+ 
+
+// save a DataFrame as a Postgres database table
+df.write.format("org.apache.spark.sql.jdbc").options(Map(
+"url" -> "jdbc:postgresql://host:port/database?user=<USER>&password=<PASS>",
+"dbtable" -> "schema-name.table-name"))
+.save()
+ 
+
+###############need to configure hive remote metastore#####################################3
+
+// save a DataFrame to a Hive table
+homeDF.write.saveAsTable("customer")
+
+The following code will only read the subdirectory named city=Berkeley and skip all other
+subdirectories under the homes directory. For a large dataset that includes data for hundreds of cities, this
+could speed up application performance by orders of magnitude.
+
+val newHomesDF = sqlContext.read.format("parquet").load("file:///home/hduser/sparkoutput/parquet/")
+
+newHomesDF.registerTempTable("homes")
+val homesInBerkeley = sqlContext.sql("SELECT * FROM homes WHERE city = 'Berkeley'")
+
+homesInBerkeley.show
+
+
+########################################################################################
+Programming with SQL At the Scala REPL prompt, try the following statements:
+
+scala> // Define the case classes for using in conjunction with DataFrames
+scala> case class Trans(accNo: String, tranAmount: Double)
+
+scala> // Functions to convert the sequence of strings to objects defined
+
+scala> def toTrans = (trans: Seq[String]) => Trans(trans(0),trans(1).trim.toDouble)
+
+scala> // Creation of the list from where the RDD is going to be created
+scala> val acTransList = Array("SB10001,1000", "SB10002,1200",
+"SB10003,8000", "SB10004,400", "SB10005,300", "SB10006,10000",
+"SB10007,500", "SB10008,56", "SB10009,30","SB10010,7000", "CR10001,7000",
+"SB10002,-10")
+
+scala> // Create the RDD
+scala> val acTransRDD = sc.parallelize(acTransList).map(_.split(",")).map(toTrans(_))
+
+scala> // Convert RDD to DataFrame
+scala> val acTransDF = spark.createDataFrame(acTransRDD)
+
+scala> // Register temporary view in the DataFrame for using it in SQL
+scala> acTransDF.createOrReplaceTempView("trans")
+scala> // Print the structure of the DataFrame
+scala> acTransDF.printSchema
+
+scala> // Show the first few records of the DataFrame
+scala> acTransDF.show
+
+scala> // Use SQL to create another DataFrame containing the good transaction records
+val goodTransRecords = spark.sql("SELECT accNo, tranAmount FROM trans WHERE accNo like 'SB%' AND tranAmount > 0")
+
+// Register temporary view in the DataFrame for using it in SQL
+goodTransRecords.createOrReplaceTempView("goodtrans")
+// Show the first few records of the DataFrame
+goodTransRecords.show
+
+// Use SQL to create another DataFrame containing the high value transaction records
+val highValueTransRecords = spark.sql("SELECT accNo, tranAmount FROM goodtrans WHERE tranAmount > 1000")
+
+// Show the first few records of the DataFrame
+highValueTransRecords.show
+
+
+scala> // Use SQL to create another DataFrame containing the bad account records
+
+val badAccountRecords = spark.sql("SELECT accNo, tranAmount FROM trans WHERE accNo NOT like 'SB%'")
+
+scala> // Show the first few records of the DataFrame
+badAccountRecords.show
+
+
+scala> // Use SQL to create another DataFrame containing the bad amount records
+
+val badAmountRecords = spark.sql("SELECT accNo, tranAmount FROM trans WHERE tranAmount < 0")
+
+
+scala> // Show the first few records of the DataFrame
+badAmountRecords.show
+
+scala> // Do the union of two DataFrames and create another DataFrame
+val badTransRecords = badAccountRecords.union(badAmountRecords) 
+
+scala> // Show the first few records of the DataFrame
+scala> badTransRecords.show
+
+scala> // Calculate the sum
+val sumAmount = spark.sql("SELECT sum(tranAmount) as sum FROM goodtrans")
+
+scala> // Show the first few records of the DataFrame
+sumAmount.show
+
+scala> // Calculate the maximum
+val maxAmount = spark.sql("SELECT max(tranAmount) as max FROM goodtrans")
+
+scala> // Show the first few records of the DataFrame
+maxAmount.show
+
+scala> // Calculate the minimum
+val minAmount = spark.sql("SELECT min(tranAmount) as min FROM goodtrans")
+
+scala> // Show the first few records of the DataFrame
+minAmount.show
+
+scala> // Use SQL to create another DataFrame containing the good account numbers
+
+val goodAccNos = spark.sql("SELECT DISTINCT accNo FROM trans WHERE accNo like 'SB%' ORDER BY accNo")
+
+scala> // Show the first few records of the DataFrame
+goodAccNos.show
+
+
+scala> // Calculate the aggregates using mixing of DataFrame and RDD like operations
+val sumAmountByMixing = goodTransRecords.map(trans => trans.getAs[Double]("tranAmount")).reduce(_ + _)
+
+val maxAmountByMixing = goodTransRecords.map(trans => trans.getAs[Double]("tranAmount")).reduce((a, b) => if (a > b) a else b)
+
+val minAmountByMixing = goodTransRecords.map(trans => trans.getAs[Double]("tranAmount")).reduce((a, b) => if (a < b) a else b)
+
+
+The retail banking transaction records come with account number, transaction amount and
+are processed using SparkSQL to get the desired results of the use cases. Here is the
+summary of what the preceding script did:
+A Scala case class is defined to describe the structure of the transaction record to
+be fed into the DataFrame.
+An array is defined with the necessary transaction records.
+An RDD is made from the array, split the comma-separated values, mapped it to
+create objects using the Scala case class that was defined as the first step in the
+scripts, and the RDD is converted to a DataFrame. This is one use case of
+interoperability between RDD and DataFrame.
+A table is registered with the DataFrame with a name. This registered name of the
+table can be used in SQL statements.
+Then, all the other activities are just issuing SQL statements using the spark.sql
+method. Here the object spark is of type the SparkSession.
+The result of all these SQL statements is stored as DataFrames and, just like the
+RDD's collect action, DataFrame's show method is used to extract the values to
+the Spark driver program.
+The aggregate value calculations are done in two different ways. One is in the
+SQL statement way, which is the easiest way. The other is using the regular RDD-
+style Spark transformations and Spark actions. This is to show that even
+DataFrame can be operated like an RDD, and Spark transformations and Spark
+actions can be applied on top of DataFrame.
+At times, it is easy to do some data manipulation activities through the functional
+style operations using functions. So, there is a flexibility here to mix SQL, RDD,
+and DataFrame to have a very convenient programming model to process data.
+The DataFrame contents are displayed in table format using the show method of
+the DataFrame.
+A detailed view of the structure of the DataFrame is displayed using the
+printSchema method. This is akin to the describe command of the database
+tables.
+
+
+Programming with DataFrame API
+################################
+
+acTransDF.show
+
+scala> // Create the DataFrame using API for the good transaction records
+
+val goodTransRecords = acTransDF.filter("accNo like 'SB%'").filter("tranAmount > 0")
+
+scala> // Show the first few records of the DataFrame
+
+goodTransRecords.show
+
+scala> // Create the DataFrame using API for the high value transaction records
+
+val highValueTransRecords = goodTransRecords.filter("tranAmount > 1000")
+
+scala> // Show the first few records of the DataFrame
+
+highValueTransRecords.show
+
+
+scala> // Create the DataFrame using API for the bad account records
+ val badAccountRecords = acTransDF.filter("accNo NOT like 'SB%'")
+
+scala> // Show the first few records of the DataFrame
+badAccountRecords.show
+
+scala> // Create the DataFrame using API for the bad amount records
+val badAmountRecords = acTransDF.filter("tranAmount < 0")
+
+scala> // Show the first few records of the DataFrame
+
+badAmountRecords.show
+
+scala> // Do the union of two DataFrames
+
+val badTransRecords = badAccountRecords.union(badAmountRecords)
+
+scala> // Show the first few records of the DataFrame
+
+badTransRecords.show
+
+scala> // Calculate the aggregates in one shot
+val aggregates = goodTransRecords.agg(sum("tranAmount"),max("tranAmount"), min("tranAmount"))
+
+scala> // Show the first few records of the DataFrame
+aggregates.show
+
+scala> // Use DataFrame using API for creating the good account numbers
+
+val goodAccNos = acTransDF.filter("accNo like 'SB%'").select("accNo").distinct().orderBy("accNo")
+
+scala> // Show the first few records of the DataFrame
+goodAccNos.show
+
+scala> // Persist the data of the DataFrame into a Parquet file
+
+acTransDF.write.parquet("file:///home/hduser/scala.trans.parquet")
+
+scala> // Read the data into a DataFrame from the Parquet file
+
+val acTransDFfromParquet = spark.read.parquet("file:///home/hduser/scala.trans.parquet")
+
+scala> // Show the first few records of the DataFrame
+
+acTransDFfromParquet.show
+
+
+Here is the summary of what the preceding script did from a DataFrame API perspective:
+The DataFrame containing the superset of data used in the preceding section is
+used here.
+Filtering of the records is demonstrated next. Here, the most important aspect to
+notice is that the filter predicate is to be given exactly like the predicates in the
+SQL statements. Filters can be chained.
+The aggregation methods are calculated in one go as three columns in the
+resultant DataFrame.
+The final statements in this set are doing the selection, filtering, choosing distinct
+records, and ordering in one single chained statement.
+Finally, the transaction records are persisted in Parquet format, read from the
+Parquet store and create a DataFrame. More details on the persistence formats is
+coming in the following section.
+In this code snippet, the Parquet format data is stored in the current directory
+from where the corresponding REPL is invoked. When it is run as a Spark
+program, the directory again will be the current directory from where the Spark
+submit is invoked.
+
+
+Understanding Aggregations in Spark SQL
+########################################
+
+scala> // Create the DataFrame
+scala> val acTransDF = sc.parallelize(acTransList).map(_.split(",")).map(toTrans(_)).toDF()
+
+scala> // Show the first few records of the DataFrame
+scala> acTransDF.show
+
+scala> // Register temporary view in the DataFrame for using it in SQL
+
+acTransDF.createOrReplaceTempView("trans")
+scala> // Use SQL to create another DataFrame containing the account summary records
+
+val acSummary = spark.sql("SELECT accNo, sum(tranAmount) as TransTotal FROM trans GROUP BY accNo")
+
+scala> // Show the first few records of the DataFrame
+
+acSummary.show
+
+scala> // Create the DataFrame using API for the account summary records
+val acSummaryViaDFAPI = acTransDF.groupBy("accNo").agg(sum("tranAmount") as "TransTotal")
+
+scala> // Show the first few records of the DataFrame
+acSummaryViaDFAPI.show
+
+Understanding multi-datasource joining with SparkSQL
+#####################################################
+
+scala> // Define the case classes for using in conjunction with DataFrames
+
+case class AcMaster(accNo: String, firstName: String, lastName: String)
+
+defined class AcMaster
+
+case class AcBal(accNo: String, balanceAmount: Double)
+
+defined class AcBal
+scala> // Functions to convert the sequence of strings to objects defined by the case classes
+
+def toAcMaster = (master: Seq[String]) => AcMaster(master(0), master(1), master(2))
+
+def toAcBal = (bal: Seq[String]) => AcBal(bal(0), bal(1).trim.toDouble)
+
+scala> // Creation of the list from where the RDD is going to be created
+
+val acMasterList = Array("SB10001,Roger,Federer","SB10002,Pete,Sampras",
+"SB10003,Rafael,Nadal","SB10004,Boris,Becker", "SB10005,Ivan,Lendl")
+acMasterList: Array[String] = Array(SB10001,Roger,Federer,
+SB10002,Pete,Sampras, SB10003,Rafael,Nadal, SB10004,Boris,Becker,
+SB10005,Ivan,Lendl)
+
+scala> // Creation of the list from where the RDD is going to be created
+
+val acBalList = Array("SB10001,50000", "SB10002,12000","SB10003,3000", "SB10004,8500", "SB10005,5000")
+
+scala> // Create the DataFrame
+
+val acMasterDF = sc.parallelize(acMasterList).map(_.split(",")).map(toAcMaster(_)).toDF()
+
+scala> // Create the DataFrame
+
+val acBalDF = sc.parallelize(acBalList).map(_.split(",")).map(toAcBal(_)).toDF()
+
+scala> // Persist the data of the DataFrame into a Parquet file
+
+acMasterDF.write.parquet("file:///home/hduser/scala.master1.parquet")
+
+scala> // Persist the data of the DataFrame into a JSON file
+
+acBalDF.write.json("scalaMaster.json")
+
+scala> // Read the data into a DataFrame from the Parquet file
+
+val acMasterDFFromFile = spark.read.parquet("scala.master.parquet")
+
+scala> // Register temporary view in the DataFrame for using it in SQL
+
+acMasterDFFromFile.createOrReplaceTempView("master")
+
+scala> // Read the data into a DataFrame from the JSON file
+
+val acBalDFFromFile = spark.read.json("scalaMaster.json")
+
+scala> // Register temporary view in the DataFrame for using it in SQL
+
+acBalDFFromFile.createOrReplaceTempView("balance")
+
+scala> // Show the first few records of the DataFrame
+
+acMasterDFFromFile.show
+
+acBalDFFromFile.show
+
+scala> // Use SQL to create another DataFrame containing the account detail records
+
+val acDetail = spark.sql("SELECT master.accNo, firstName, lastName, balanceAmount FROM master, balance WHERE master.accNo = balance.accNo ORDER BY balanceAmount DESC")
+
+scala> // Show the first few records of the DataFrame
+
+acDetail.show
+
+Continuing from the same Scala REPL session, the following lines of code get the same result through the DataFrame API:
+#######################################################################################################################
+
+scala> // Create the DataFrame using API for the account detail records
+val acDetailFromAPI = acMasterDFFromFile.join(acBalDFFromFile, acMasterDFFromFile("accNo") === acBalDFFromFile("accNo"),
+"inner").sort($"balanceAmount".desc).select(acMasterDFFromFile("accNo"), acMasterDFFromFile("firstName"), acMasterDFFromFile("lastName"), acBalDFFromFile("balanceAmount"))
+
+scala> // Show the first few records of the DataFrame
+
+acDetailFromAPI.show
+
+
+scala> // Use SQL to create another DataFrame containing the top 3 account detail records
+
+val acDetailTop3 = spark.sql("SELECT master.accNo, firstName, lastName, balanceAmount FROM master, balance WHERE master.accNo = balance.accNo ORDER BY balanceAmount DESC").limit(3)
+
+scala> // Show the first few records of the DataFrame
+
+acDetailTop3.show
+
+
+Understanding Data Catalogs
+############################
+
+scala> // Get the catalog object from the SparkSession object
+val catalog = spark.catalog
+
+scala> // Get the list of databases
+val dbList = catalog.listDatabases()
+
+scala> // Display the details of the databases
+dbList.select("name", "description", "locationUri").show()
+
+scala> // Display the details of the tables in the database
+val tableList = catalog.listTables()
+
+tableList.show()
+
+scala> // The above list contains the temporary view that was created in the Dataset use case discussed in the previous section
+// The views created in the applications can be removed from the database using the Catalog API
+
+catalog.dropTempView("trans")
+// List the available tables after dropping the temporary view
+
+val latestTableList = catalog.listTables()
+
+latestTableList.show()

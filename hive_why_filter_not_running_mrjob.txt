@@ -1,0 +1,38 @@
+FetchTask directly fetches data, whereas Mapreduce will invoke a map reduce job
+<property>
+  <name>hive.fetch.task.conversion</name>
+  <value>minimal</value>
+  <description>
+    Some select queries can be converted to single FETCH task 
+    minimizing latency.Currently the query should be single 
+    sourced not having any subquery and should not have
+    any aggregations or distincts (which incurrs RS), 
+    lateral views and joins.
+    1. minimal : SELECT STAR, FILTER on partition columns, LIMIT only
+    2. more    : SELECT, FILTER, LIMIT only (+TABLESAMPLE, virtual columns)
+  </description>
+</property>
+
+set hive.fetch.task.conversion=none/minimal/more;
+
+Default more in 0.14
+	
+Also there is another parameter hive.fetch.task.conversion.threshold which by default in 0.10-0.13 is -1 
+and >0.14 is 1G(1073741824) This indicates that, If table size is greater than 1G use Mapreduce instead of Fetch task
+
+This parameter controls which kind of simple query can be converted to a single fetch task.
+
+
+hive.fetch.task.aggr
+
+Aggregation queries with no group-by clause (for example, select count(*) from src) execute final aggregations in a single reduce task. If this parameter is set to true, Hive delegates the final aggregation stage to a fetch task(reducere will not run), possibly decreasing the query time.
+
+
+hive.fetch.task.conversion.threshold
+
+This parameter controls input threshold (in bytes) for applying hive.fetch.task.conversion. 
+Default value  is 1GB(1073741824) 
+
+If hive.fetch.task.conversion.threshold is less than the table size, it will use MapReduce Job:
+set hive.fetch.task.conversion.threshold=100000000;
+Else, it will only use fetch task
